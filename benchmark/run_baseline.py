@@ -81,11 +81,29 @@ def exercises_dir_missing_message(checked_paths, explicit=False):
     )
 
 
-def discover_exercise_paths(exercises_root):
+def parse_languages_filter(languages):
+    if not languages:
+        return None
+    return {lang.strip().lower() for lang in languages.split(",") if lang.strip()}
+
+
+def passthrough_languages(passthrough):
+    for index, arg in enumerate(passthrough):
+        if arg in ("--languages", "-l") and index + 1 < len(passthrough):
+            return passthrough[index + 1]
+        if arg.startswith("--languages="):
+            return arg.split("=", 1)[1]
+    return None
+
+
+def discover_exercise_paths(exercises_root, languages=None):
     """Return deterministic language/exercise paths for a polyglot exercises tree."""
     exercises_root = Path(exercises_root)
+    requested = parse_languages_filter(languages)
     paths = []
     for language_dir in sorted((p for p in exercises_root.iterdir() if p.is_dir()), key=lambda p: p.name):
+        if requested and language_dir.name.lower() not in requested:
+            continue
         practice_dir = language_dir / "exercises" / "practice"
         if not practice_dir.exists():
             continue
@@ -158,10 +176,11 @@ def prepare_smoke_exercises(args, run_dir, exercises_dir, source_root, dry_run=F
         "smoke_root_for_benchmark": str(smoke_root_for_benchmark),
         "smoke_size": str(smoke_size),
         "expected_tasks": str(smoke_size),
+        "languages": args.languages or "",
         "tasks": [],
     }
 
-    selected = discover_exercise_paths(source_root)[:smoke_size]
+    selected = discover_exercise_paths(source_root, languages=args.languages)[:smoke_size]
     metadata["tasks"] = [path.as_posix() for path in selected]
 
     if not dry_run:
@@ -396,6 +415,7 @@ def print_log_tail(label, path, max_lines=40):
 
 def main(argv=None):
     args, passthrough = parse_args(argv)
+    args.languages = passthrough_languages(passthrough)
     if args.smoke_size < 1:
         raise SystemExit("--smoke-size must be at least 1")
 
@@ -446,7 +466,7 @@ def main(argv=None):
         if not args.smoke:
             raise SystemExit("--validate-smoke requires --smoke")
         validation_ok, _, _ = print_validation_report(
-            exercises_dir, expected_count=args.smoke_size
+            exercises_dir, languages=args.languages, expected_count=args.smoke_size
         )
         if not validation_ok:
             raise SystemExit(
@@ -460,7 +480,7 @@ def main(argv=None):
 
     if args.smoke:
         validation_ok, validation_paths, validation_problems = print_validation_report(
-            exercises_dir, expected_count=args.smoke_size
+            exercises_dir, languages=args.languages, expected_count=args.smoke_size
         )
         if not validation_ok:
             write_child_metadata(

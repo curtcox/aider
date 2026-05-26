@@ -63,6 +63,7 @@ class TestRunBaseline(unittest.TestCase):
             args = argparse.Namespace(
                 run_name="smoke",
                 smoke_size=2,
+                languages=None,
             )
 
             smoke_name, metadata = run_baseline.prepare_smoke_exercises(
@@ -94,6 +95,68 @@ class TestRunBaseline(unittest.TestCase):
                 ).exists()
             )
             self.assertFalse((source / "javascript" / "exercises" / "practice" / "zebra").exists())
+
+    @mock.patch("benchmark.run_baseline.benchmark_dir")
+    def test_prepare_smoke_exercises_respects_language_filter(self, mock_benchmark_dir):
+        with tempfile.TemporaryDirectory() as tempdir:
+            root = Path(tempdir)
+            mock_benchmark_dir.return_value = root
+            source = root / "polyglot-benchmark"
+            for rel_path in [
+                "cpp/exercises/practice/allergies",
+                "python/exercises/practice/bob",
+                "python/exercises/practice/hello-world",
+            ]:
+                exercise = source / rel_path
+                exercise.mkdir(parents=True)
+                (exercise / "README.md").write_text(rel_path)
+
+            args = argparse.Namespace(
+                run_name="python-smoke",
+                smoke_size=2,
+                languages="python",
+            )
+
+            smoke_name, metadata = run_baseline.prepare_smoke_exercises(
+                args,
+                root / "runs" / "python-smoke",
+                "polyglot-benchmark",
+                source,
+                dry_run=False,
+            )
+
+            self.assertEqual(Path(smoke_name), (root / "smoke-exercises" / "python-smoke").resolve())
+            self.assertEqual(
+                metadata["tasks"],
+                [
+                    "python/exercises/practice/bob",
+                    "python/exercises/practice/hello-world",
+                ],
+            )
+            self.assertEqual(metadata["languages"], "python")
+            self.assertTrue(
+                (
+                    root
+                    / "smoke-exercises"
+                    / "python-smoke"
+                    / "python"
+                    / "exercises"
+                    / "practice"
+                    / "bob"
+                    / "README.md"
+                ).exists()
+            )
+            self.assertFalse(
+                (
+                    root
+                    / "smoke-exercises"
+                    / "python-smoke"
+                    / "cpp"
+                    / "exercises"
+                    / "practice"
+                    / "allergies"
+                ).exists()
+            )
 
     @mock.patch("benchmark.run_baseline.benchmark_dir")
     def test_validate_discoverable_exercises_matches_benchmark_layout(self, mock_benchmark_dir):
