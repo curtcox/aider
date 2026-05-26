@@ -48,9 +48,10 @@ Current plan status:
 - Add baseline run wrapper and summarizer: done.
 - Run real `gpt-4.1-mini` smoke test: done.
 - Run full `gpt-4.1-mini` Polyglot baseline: done.
-- Stronger hosted model, non-OpenAI hosted model, Ollama smoke/full local,
-  `EditSystem`, `NoopEditSystem`, `FleshwoundEditSystem`, Fleshwound
-  benchmarks, and comparison report: not started.
+- Stronger hosted model baseline: done with `gpt-4.1`.
+- Non-OpenAI hosted model, Ollama smoke/full local, `EditSystem`,
+  `NoopEditSystem`, `FleshwoundEditSystem`, Fleshwound benchmarks, and
+  comparison report: not started.
 
 Fresh-machine resume commands from the repo root:
 
@@ -247,6 +248,15 @@ Recorded `gpt-4.1-mini` diff baseline results from May 26, 2026:
   225 completed tests, `pass_rate_1: 11.1`, `pass_rate_2: 33.3`,
   `pass_num_1: 25`, `pass_num_2: 75`, 3 test timeouts, and cost `$1.4599`
   at commit `bcdad8e`.
+- Stronger hosted-model Python smoke with `gpt-4.1`:
+  `runs/python-smoke-gpt41/child.txt` recorded `completed_tests: 3` and
+  `expected_tests: 3`; `pass_rate_1: 66.7`, `pass_rate_2: 100.0`, cost
+  `$0.0455`.
+- Stronger hosted-model full baseline with `gpt-4.1`:
+  `tmp.benchmarks/2026-05-26-22-11-36--full-gpt41-diff` recorded
+  225 completed tests, `pass_rate_1: 20.0`, `pass_rate_2: 49.8`,
+  `pass_num_1: 45`, `pass_num_2: 112`, 4 test timeouts, and cost `$7.8908`
+  at commit `84cf090`.
 
 You can pass through additional `benchmark.py` flags after the wrapper flags,
 for example:
