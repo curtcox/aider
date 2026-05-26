@@ -49,9 +49,11 @@ Current plan status:
 - Run real `gpt-4.1-mini` smoke test: done.
 - Run full `gpt-4.1-mini` Polyglot baseline: done.
 - Stronger hosted model baseline: done with `gpt-4.1`.
-- Non-OpenAI hosted model, Ollama smoke/full local, `EditSystem`,
-  `NoopEditSystem`, `FleshwoundEditSystem`, Fleshwound benchmarks, and
-  comparison report: not started.
+- Non-OpenAI hosted model: blocked on a non-OpenAI API key.
+- Ollama local smoke: done with `qwen2.5-coder:7b`; full local run blocked on
+  choosing or tuning a stronger local model.
+- `EditSystem`, `NoopEditSystem`, `FleshwoundEditSystem`, Fleshwound
+  benchmarks, and comparison report: not started.
 
 Fresh-machine resume commands from the repo root:
 
@@ -257,6 +259,12 @@ Recorded `gpt-4.1-mini` diff baseline results from May 26, 2026:
   225 completed tests, `pass_rate_1: 20.0`, `pass_rate_2: 49.8`,
   `pass_num_1: 45`, `pass_num_2: 112`, 4 test timeouts, and cost `$7.8908`
   at commit `84cf090`.
+- Ollama local Python smoke with `ollama/qwen2.5-coder:7b`:
+  `runs/python-smoke-qwen25coder7b/child.txt` recorded `completed_tests: 3`
+  and `expected_tests: 3`; `pass_rate_1: 0.0`, `pass_rate_2: 33.3`,
+  `pass_num_1: 0`, `pass_num_2: 1`, no malformed responses, no hosted cost,
+  and `seconds_per_case: 174.9`. The model was too slow and weak for a full
+  local baseline on this setup.
 
 You can pass through additional `benchmark.py` flags after the wrapper flags,
 for example:
