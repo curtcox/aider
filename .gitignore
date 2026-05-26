@@ -16,4 +16,6 @@ aider/_version.py
 .#*
 .gitattributes
 tmp.benchmarks/
+runs/
 .docker_bash_history
+.bash_history
