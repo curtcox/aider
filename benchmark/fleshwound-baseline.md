@@ -46,8 +46,8 @@ Current plan status:
 - Fork Aider: done.
 - Prepare pinned Polyglot data tooling: done.
 - Add baseline run wrapper and summarizer: done.
-- Run real `gpt-4.1-mini` smoke test: next.
-- Run full `gpt-4.1-mini` Polyglot baseline: blocked on smoke success.
+- Run real `gpt-4.1-mini` smoke test: done.
+- Run full `gpt-4.1-mini` Polyglot baseline: done.
 - Stronger hosted model, non-OpenAI hosted model, Ollama smoke/full local,
   `EditSystem`, `NoopEditSystem`, `FleshwoundEditSystem`, Fleshwound
   benchmarks, and comparison report: not started.
@@ -225,12 +225,28 @@ python3 benchmark/run_baseline.py \
   --run-name full-gpt41mini-diff \
   --model gpt-4.1-mini \
   --edit-format diff \
-  --threads 1
+  --threads 10 \
+  --exercises-dir /benchmarks/polyglot-benchmark
 ```
 
 On a 16GB M1 Mac, start with one thread. Increase `--threads` only after a
 smoke run confirms Docker, dependencies, model access, and test commands are
 working reliably.
+
+Recorded `gpt-4.1-mini` diff baseline results from May 26, 2026:
+
+- Real default smoke: `runs/real-smoke-gpt41mini/child.txt` recorded
+  `completed_tests: 3` and `expected_tests: 3`; the default smoke tasks were
+  the first three sorted C++ exercises and passed 0 of 3.
+- Python smoke after fixing language-filtered smoke selection:
+  `runs/python-smoke-gpt41mini/child.txt` recorded `completed_tests: 3` and
+  `expected_tests: 3`; `pass_rate_1: 33.3`, `pass_rate_2: 66.7`, cost
+  `$0.0149`.
+- Full baseline:
+  `tmp.benchmarks/2026-05-26-21-53-23--full-gpt41mini-diff` recorded
+  225 completed tests, `pass_rate_1: 11.1`, `pass_rate_2: 33.3`,
+  `pass_num_1: 25`, `pass_num_2: 75`, 3 test timeouts, and cost `$1.4599`
+  at commit `bcdad8e`.
 
 You can pass through additional `benchmark.py` flags after the wrapper flags,
 for example:
