@@ -60,6 +60,11 @@ def load_result(path):
         return None
 
 
+def find_structured_result_files(path):
+    """Find result artifacts that match the canonical Polyglot run layout."""
+    return sorted(Path(path).glob(RESULT_GLOB))
+
+
 def find_result_files(path):
     """Find benchmark result artifacts.
 
@@ -69,7 +74,7 @@ def find_result_files(path):
     - Defensive fallback for copied or future artifacts anywhere below <run>.
     """
     path = Path(path)
-    files = sorted(path.glob(RESULT_GLOB))
+    files = find_structured_result_files(path)
     if files:
         return files
     return sorted(path.rglob(".aider.results.json"))
@@ -85,10 +90,19 @@ def is_prepared_source_dataset(path):
 
 
 def is_benchmark_result_dir(path):
+    """Decide whether ``path`` is itself a single run directory.
+
+    This intentionally does NOT use the ``rglob`` fallback in
+    ``find_result_files``. A parent like ``tmp.benchmarks/`` that contains
+    multiple dated run directories would otherwise be misclassified as a
+    single giant run because rglob aggregates results from every child.
+    Discovery should descend into such a parent and treat each child run
+    as its own row.
+    """
     path = Path(path)
     if is_prepared_source_dataset(path):
         return False
-    return bool(find_result_files(path))
+    return bool(find_structured_result_files(path))
 
 
 def count_exercise_dirs(path):

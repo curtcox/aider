@@ -508,6 +508,53 @@ class TestSummarizeRuns(unittest.TestCase):
 
             self.assertEqual(summarize_runs.discover_benchmark_dirs([Path(tempdir)]), [])
 
+    def test_discover_yields_one_row_per_dated_run_under_parent(self):
+        """Regression: a parent like tmp.benchmarks/ holding multiple dated run
+        dirs must produce one summary row per child run, not a single merged
+        row covering all of them.
+        """
+        with tempfile.TemporaryDirectory() as tempdir:
+            parent = Path(tempdir)
+            children = [
+                ("2026-05-26-12-00-00--alpha", "gpt-4.1-mini", "abc1234", 0.0123),
+                ("2026-05-26-13-00-00--beta", "gpt-4.1", "def5678", 0.0456),
+            ]
+            for label, model, commit, cost in children:
+                exercise = (
+                    parent / label / "python" / "exercises" / "practice" / "hello-world"
+                )
+                exercise.mkdir(parents=True)
+                (exercise / ".aider.results.json").write_text(
+                    json.dumps(
+                        {
+                            "model": model,
+                            "edit_format": "diff",
+                            "commit_hash": commit,
+                            "tests_outcomes": [True],
+                            "cost": cost,
+                            "duration": 1.0,
+                        }
+                    )
+                )
+
+            dirs = summarize_runs.discover_benchmark_dirs([parent])
+
+            self.assertEqual(
+                sorted(d.name for d in dirs),
+                ["2026-05-26-12-00-00--alpha", "2026-05-26-13-00-00--beta"],
+            )
+
+            rows = [summarize_runs.summarize_benchmark_dir(d) for d in dirs]
+            by_name = {row["run_name"]: row for row in rows}
+
+            self.assertEqual(sorted(by_name), ["alpha", "beta"])
+            self.assertEqual(by_name["alpha"]["model"], "gpt-4.1-mini")
+            self.assertEqual(by_name["alpha"]["commit_hash"], "abc1234")
+            self.assertEqual(by_name["alpha"]["total_cost"], "0.0123")
+            self.assertEqual(by_name["beta"]["model"], "gpt-4.1")
+            self.assertEqual(by_name["beta"]["commit_hash"], "def5678")
+            self.assertEqual(by_name["beta"]["total_cost"], "0.0456")
+
 
 if __name__ == "__main__":
     unittest.main()
