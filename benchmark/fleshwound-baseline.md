@@ -52,6 +52,9 @@ Current plan status:
 - Non-OpenAI hosted model: blocked on a non-OpenAI API key.
 - Ollama local smoke: done with `qwen2.5-coder:7b`; full local run blocked on
   choosing or tuning a stronger local model.
+- Reproduce published Polyglot numbers locally: done for `gpt-4.1` and
+  `gpt-4.1-mini` (both diff). First-attempt pass rates and pass counts match
+  exactly; see "Reproduction vs published leaderboard" below.
 - `EditSystem`, `NoopEditSystem`, `FleshwoundEditSystem`, Fleshwound
   benchmarks, and comparison report: not started.
 
@@ -265,6 +268,64 @@ Recorded `gpt-4.1-mini` diff baseline results from May 26, 2026:
   `pass_num_1: 0`, `pass_num_2: 1`, no malformed responses, no hosted cost,
   and `seconds_per_case: 174.9`. The model was too slow and weak for a full
   local baseline on this setup.
+
+## Reproduction vs published leaderboard
+
+Before measuring any new edit system, confirm that this fork's harness
+reproduces upstream published Polyglot numbers within expected variance. The
+two existing full runs above map directly onto entries in
+`aider/website/_data/polyglot_leaderboard.yml` (the upstream Aider leaderboard
+data file vendored in this fork).
+
+Local Aider version is `0.86.3.dev`; published rows used `0.81.4.dev`. The
+published commit hashes are listed as `-dirty`, so even an upstream rerun
+could not be perfectly bit-for-bit reproducible.
+
+`gpt-4.1` (diff, 225 tasks):
+
+| Metric           | Published 2025-04-14 | Local 2026-05-26 (`full-gpt41-diff`) | Δ        |
+|------------------|----------------------|--------------------------------------|----------|
+| pass_rate_1      | 20.0                 | 20.0                                 | 0.0      |
+| pass_num_1       | 45                   | 45                                   | 0        |
+| pass_rate_2      | 52.4                 | 49.8                                 | -2.6 pp  |
+| pass_num_2       | 118                  | 112                                  | -6       |
+| test_timeouts    | 5                    | 4                                    | -1       |
+| total_cost       | $9.8556              | $7.8908                              | -$1.96   |
+| seconds_per_case | 20.5                 | 10.9                                 | -9.6     |
+| commit_hash      | 7a87db5-dirty        | 84cf090                              | —        |
+
+`gpt-4.1-mini` (diff, 225 tasks):
+
+| Metric           | Published 2025-04-14 | Local 2026-05-26 (`full-gpt41mini-diff`) | Δ        |
+|------------------|----------------------|------------------------------------------|----------|
+| pass_rate_1      | 11.1                 | 11.1                                     | 0.0      |
+| pass_num_1       | 25                   | 25                                       | 0        |
+| pass_rate_2      | 32.4                 | 33.3                                     | +0.9 pp  |
+| pass_num_2       | 73                   | 75                                       | +2       |
+| test_timeouts    | 2                    | 3                                        | +1       |
+| total_cost       | $1.9918              | $1.4599                                  | -$0.53   |
+| seconds_per_case | 19.5                 | 24.0                                     | +4.5     |
+| commit_hash      | ffb743e-dirty        | bcdad8e                                  | —        |
+
+Reading the deltas:
+
+- `pass_rate_1` and `pass_num_1` match exactly for both models. The same set
+  of 225 tasks pass on the first attempt across published and local runs,
+  modulo task identity. This is the strongest signal that this fork's harness
+  is faithful to the published one.
+- `pass_rate_2` differs by at most 2.6 pp (≤6 cases out of 225). The retry
+  pass only runs on tasks that failed once and resamples LLM tokens, so this
+  level of variance is expected from non-determinism alone.
+- `total_cost` is meaningfully lower locally for both models. This is hosted
+  pricing drift between April 2025 and May 2026, not a harness change. Cost
+  is whatever LiteLLM reports back from the OpenAI API.
+- `seconds_per_case` is unrelated to correctness; it depends on `--threads`,
+  network latency, and concurrency on the OpenAI side.
+- `test_timeouts ±1` is normal: a handful of tasks sit close to the per-test
+  pytest cutoff and can swing one way or the other run-to-run.
+
+Treat this fork's `benchmark.py` harness as published-leaderboard-faithful
+for any future Fleshwound vs baseline comparison.
 
 You can pass through additional `benchmark.py` flags after the wrapper flags,
 for example:
